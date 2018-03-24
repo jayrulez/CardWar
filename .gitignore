@@ -1,3 +1,14 @@
-src/server/.vs
-src/server/**/bin
-src/server/**/obj
+*.user
+*.lock
+*.lock.json
+*.suo
+*.VC.db
+*.vshost.exe
+*.manifest
+*.sdf
+src/**/.vs
+src/**/_ReSharper*
+src/**/Cache/
+src/server/**/[Bb]in/
+src/server/**/obj/
+src/client/
