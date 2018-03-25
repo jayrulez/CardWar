@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CardWar.Server.Services;
 
 namespace CardWar.Server
 {
@@ -20,13 +21,14 @@ namespace CardWar.Server
         private readonly ServerConfig _config;
         private TcpListener _listener;
         private readonly ServerSocketHandler _serverSocketHandler;
+        private readonly TimerService _timerService;
 
         private ConcurrentBag<Task> _tasks;
         private CancellationTokenSource _tasksCancellationTokenSource;
         private CancellationToken _tasksCancellationToken;
         private Task _listenerTask;
 
-        public ServerHost(IOptions<ServerConfig> config, ServerSocketHandler serverSocketHandler, ILoggerFactory loggerFactory)
+        public ServerHost(IOptions<ServerConfig> config, TimerService timerService, ServerSocketHandler serverSocketHandler, ILoggerFactory loggerFactory)
         {
             _config = config?.Value;
 
@@ -36,6 +38,7 @@ namespace CardWar.Server
             }
 
             _serverSocketHandler = serverSocketHandler;
+            _timerService = timerService;
 
             _tasks = new ConcurrentBag<Task>();
             _tasksCancellationTokenSource = new CancellationTokenSource();
@@ -55,6 +58,11 @@ namespace CardWar.Server
             _listener.Start();
 
             _logger.LogInformation($"Listening on {ipAddress}:{_config.Port}");
+
+            _timerService.Start(_tasksCancellationToken);
+            //var timerTask = Task.Factory.StartNew(() => _timerService.Start(_tasksCancellationToken), _tasksCancellationToken);
+
+            //_tasks.Add(timerTask);
 
             _listenerTask = Task.Factory.StartNew(() => ListenLoop(_tasksCancellationToken), _tasksCancellationToken);
 

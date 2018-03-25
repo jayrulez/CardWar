@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using CardWar.Server.Managers;
 using System;
-using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CardWar.Server.Sockets
+namespace CardWar.Common.Sockets
 {
     public abstract class SocketHandler
     {
@@ -37,7 +35,7 @@ namespace CardWar.Server.Sockets
             if (!socket.Connected)
                 return;
             
-            await socket.SendAsync(buffer: new ArraySegment<byte>(array: Encoding.ASCII.GetBytes(message), offset: 0, count: message.Length), socketFlags: SocketFlags.None);
+            await socket.SendAsync(buffer: new ArraySegment<byte>(array: Encoding.UTF8.GetBytes(message), offset: 0, count: message.Length), socketFlags: SocketFlags.None);
         }
 
         public async Task SendMessageAsync(string socketId, string message)

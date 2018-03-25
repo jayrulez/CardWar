@@ -1,13 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace CardWar.Server.Sockets
+namespace CardWar.Common.Sockets
 {
     public class SocketConnectionManager
     {
@@ -50,20 +48,18 @@ namespace CardWar.Server.Sockets
             {
                 _logger.LogInformation($"Attempting to remove socket '{id}'.");
 
-                Socket socket;
-
-                _sockets.TryRemove(id, out socket);
+                _sockets.TryRemove(id, out Socket socket);
 
                 _logger.LogInformation($"Socket '{id}' removed from sockets collection.");
 
-                //if(socket != null && socket.Connected)
-                //{
-                _logger.LogInformation($"Attempting to close socket '{id}'.");
+                if (socket != null && socket.Connected)
+                {
+                    _logger.LogInformation($"Attempting to close socket '{id}'.");
 
-                socket.Close();
+                    socket.Close();
 
-                _logger.LogInformation($"Closed socket '{id}'.");
-                //}
+                    _logger.LogInformation($"Closed socket '{id}'.");
+                }
             }
 
             return Task.CompletedTask;

@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Utilities\" />
+    <Folder Include="Game\" />
   </ItemGroup>
 
   <ItemGroup>

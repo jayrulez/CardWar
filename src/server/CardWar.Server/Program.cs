@@ -11,7 +11,8 @@ using CardWar.Server.Configuration;
 using CardWar.Server.Data;
 using CardWar.Server.Managers;
 using CardWar.Server.Services;
-using CardWar.Server.Sockets;
+using CardWar.Server.Messaging.Handlers;
+using CardWar.Common.Sockets;
 
 namespace CardWar.Server
 {
@@ -54,6 +55,10 @@ namespace CardWar.Server
 
                     services.AddSingleton<SocketConnectionManager, SocketConnectionManager>();
                     services.AddSingleton<ServerSocketHandler, ServerSocketHandler>();
+                    services.AddSingleton<TimerService, TimerService>();
+
+                    services.AddTransient<HeartBeatMessageHandler, HeartBeatMessageHandler>();
+                    services.AddTransient<LoginMessageHandler, LoginMessageHandler>();
                 })
                 .ConfigureLogging((hostingContext, logging) =>
                 {
