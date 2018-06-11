@@ -8,12 +8,12 @@ using System.Xml.Linq;
 
 namespace CardWar.Server.Services
 {
-    public class DatabaseXmlRepository : IXmlRepository
+    class DatabaseXmlRepository : IXmlRepository
     {
         private readonly ILogger _logger;
-        private readonly ServerDbContext _dbContext;
+        private readonly ApplicationDbContext _dbContext;
 
-        public DatabaseXmlRepository(ServerDbContext dbContext, ILoggerFactory loggerFactory)
+        public DatabaseXmlRepository(ApplicationDbContext dbContext, ILoggerFactory loggerFactory)
         {
             _dbContext = dbContext;
             _logger = loggerFactory.CreateLogger<DatabaseXmlRepository>();

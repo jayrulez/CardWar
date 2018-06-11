@@ -1,5 +1,8 @@
-﻿using System.Reflection;
-using System.Threading.Tasks;
+﻿using CardWar.Network.Server;
+using CardWar.Server.PacketHandlers;
+using CardWar.Packets;
+using CardWar.Server.Data;
+using CardWar.Server.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -7,16 +10,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using CardWar.Server.Configuration;
-using CardWar.Server.Data;
-using CardWar.Server.Managers;
-using CardWar.Server.Services;
-using CardWar.Server.Messaging.Handlers;
-using CardWar.Common.Sockets;
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace CardWar.Server
 {
-    public class Program
+    class Program
     {
         public static async Task Main(string[] args)
         {
@@ -33,10 +33,7 @@ namespace CardWar.Server
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddOptions();
-                    services.Configure<ServerConfig>(hostContext.Configuration.GetSection("ServerConfig"));
-
-                    services.AddDbContext<ServerDbContext>(options =>
+                    services.AddDbContext<ApplicationDbContext>(options =>
                     {
                         var migrationsAssembly = typeof(Program).GetTypeInfo().Assembly.GetName().Name;
 
@@ -49,16 +46,11 @@ namespace CardWar.Server
                             options.XmlRepository = services.BuildServiceProvider().CreateScope().ServiceProvider.GetRequiredService<IXmlRepository>();
                         });
 
-                    services.AddSingleton<IHostedService, ServerHost>();
-                    services.AddSingleton<UserManager, UserManager>();
                     services.AddSingleton<IXmlRepository, DatabaseXmlRepository>();
+                    services.AddSingleton<UserManager, UserManager>();
 
-                    services.AddSingleton<SocketConnectionManager, SocketConnectionManager>();
-                    services.AddSingleton<ServerSocketHandler, ServerSocketHandler>();
-                    services.AddSingleton<TimerService, TimerService>();
-
-                    services.AddTransient<HeartBeatMessageHandler, HeartBeatMessageHandler>();
-                    services.AddTransient<LoginMessageHandler, LoginMessageHandler>();
+                    services.AddTcpServer<GameServer>(hostContext.Configuration.GetSection("ServerConfiguration"))
+                        .RegisterPacketHandler<PingRequestPacketHandler>();
                 })
                 .ConfigureLogging((hostingContext, logging) =>
                 {

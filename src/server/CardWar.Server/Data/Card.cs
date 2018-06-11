@@ -4,6 +4,6 @@ namespace CardWar.Server.Data
 {
     public class Card
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
     }
 }
