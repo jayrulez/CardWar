@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardWar.Packets", "CardWar.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardWar.TestClient", "CardWar.TestClient\CardWar.TestClient.csproj", "{F78F929D-6CA7-4ECC-B8D3-7CE5EB7AD3ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardWar.Common", "CardWar.Common\CardWar.Common.csproj", "{D35C21D8-0736-4EAA-B265-536934323073}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardWar.Common", "CardWar.Common\CardWar.Common.csproj", "{D35C21D8-0736-4EAA-B265-536934323073}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

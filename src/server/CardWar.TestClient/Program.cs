@@ -31,6 +31,10 @@ namespace CardWar.TestClient
                     {
                         await PingServer(connection);
                     }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
             finally

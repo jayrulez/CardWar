@@ -19,7 +19,7 @@ namespace CardWar.Network.Server
         protected readonly TimerService _timerService;
         protected readonly ConnectionManager _connectionManager;
         protected readonly IPacketSerializer _packetSerializer;
-        
+
         protected readonly CancellationTokenSource _tasksCancellationTokenSource;
         protected readonly CancellationToken _tasksCancellationToken;
 
@@ -44,7 +44,7 @@ namespace CardWar.Network.Server
             _packetSerializer = provider.GetRequiredService<IPacketSerializer>();
 
             _logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger<TcpServer>();
-            
+
             _serverTasks = new ConcurrentBag<Task>();
 
             _packetHandlers = new Dictionary<string, IServerPacketHandler>();
@@ -60,11 +60,11 @@ namespace CardWar.Network.Server
             if (cancellationToken.IsCancellationRequested)
             {
                 connection.Close();
-
-                cancellationToken.ThrowIfCancellationRequested();
             }
-
-            _connectionManager.AddConnection(connection);
+            else
+            {
+                _connectionManager.AddConnection(connection);
+            }
 
             return Task.CompletedTask;
         }
