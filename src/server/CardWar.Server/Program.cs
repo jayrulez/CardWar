@@ -33,7 +33,7 @@ namespace CardWar.Server
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddDbContext<ApplicationDbContext>(options =>
+                    services.AddDbContextPool<ApplicationDbContext>(options =>
                     {
                         var migrationsAssembly = typeof(Program).GetTypeInfo().Assembly.GetName().Name;
 
@@ -48,6 +48,7 @@ namespace CardWar.Server
 
                     services.AddSingleton<IXmlRepository, DatabaseXmlRepository>();
                     services.AddSingleton<UserManager, UserManager>();
+                    services.AddSingleton<SessionManager, SessionManager>();
 
                     services.AddTcpServer<GameServer>(hostContext.Configuration.GetSection("ServerConfiguration"))
                         .RegisterPacketHandler<PingRequestPacketHandler>();

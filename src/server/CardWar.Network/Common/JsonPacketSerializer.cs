@@ -43,9 +43,7 @@ namespace CardWar.Network.Common
             {
                 packet.PacketId = Guid.NewGuid().ToString();
             }
-
-            packet.Key = packet.GetType().Name;
-
+            
             var data = JsonConvert.SerializeObject(packet);
 
             return Encoding.UTF8.GetBytes(data);

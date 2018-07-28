@@ -8,6 +8,6 @@ namespace CardWar.Network.Abstractions
     {
         string PacketId { get; set; }
 
-        string Key { get; set; }
+        string Key { get; }
     }
 }

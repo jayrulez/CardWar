@@ -65,5 +65,12 @@ namespace CardWar.Network.Common
 
             return (packet, buffer);
         }
+        
+        public T MapPacket<T>(byte[] packetBytes) where T : Packet
+        {
+            var packet = _packetSerializer.Deserialize<T>(packetBytes);
+
+            return packet;
+        }
     }
 }

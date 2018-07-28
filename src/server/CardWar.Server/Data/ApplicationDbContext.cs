@@ -7,6 +7,8 @@ namespace CardWar.Server.Data
 {
     public class ApplicationDbContext : DbContext
     {
+        public virtual DbSet<Card> Cards { get; set; }
+        public virtual DbSet<Session> Sessions { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<XmlKey> XmlKeys { get; set; }
 
@@ -22,6 +24,13 @@ namespace CardWar.Server.Data
             builder.Entity<Card>(entity =>
             {
                 entity.HasKey(e => e.Id);
+            });
+
+            builder.Entity<Session>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.User).WithMany(e => e.Sessions).HasForeignKey(e => e.UserId);
             });
 
             builder.Entity<User>(entity =>

@@ -12,6 +12,7 @@ namespace CardWar.Network.Abstractions
         string Id { get; }
         Task Send<T>(T packet) where T : Packet;
         Task <(Packet Packet, byte[] PacketBytes)> GetPacket();
+        T MapPacket<T>(byte[] packetBytes) where T : Packet;
         void Close();
     }
 }
