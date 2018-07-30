@@ -39,11 +39,6 @@ namespace CardWar.Network.Common
 
         public byte[] Serialize(Packet packet)
         {
-            if (string.IsNullOrEmpty(packet.PacketId))
-            {
-                packet.PacketId = Guid.NewGuid().ToString();
-            }
-            
             var data = JsonConvert.SerializeObject(packet);
 
             return Encoding.UTF8.GetBytes(data);

@@ -4,7 +4,7 @@ using CardWar.Network.Abstractions;
 
 namespace CardWar.Network.Server
 {
-    public abstract class ServerPacketHandler<T> : IServerPacketHandler where T : Packet
+    public abstract class ServerPacketHandler<T> : IServerPacketHandler<T> where T : Packet
     {
         private readonly IPacketSerializer _packetSerializer;
 
@@ -13,7 +13,8 @@ namespace CardWar.Network.Server
             _packetSerializer = packetSerializer;
         }
 
-        public string PacketType => typeof(T).Name;
+        public string PacketId => typeof(T).Name;
+        public Type PacketType => typeof(T);
 
         public async Task Handle(IConnection connection, byte[] packetBytes)
         {

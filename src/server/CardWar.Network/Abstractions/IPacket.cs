@@ -6,7 +6,7 @@ namespace CardWar.Network.Abstractions
 {
     public interface IPacket
     {
-        string PacketId { get; set; }
+        string PacketId { get; }
 
         string Key { get; }
     }

@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using CardWar.Network.Abstractions;
+using CardWar.Network.Common;
 
 namespace CardWar.Server
 {
@@ -46,12 +48,25 @@ namespace CardWar.Server
                             options.XmlRepository = services.BuildServiceProvider().CreateScope().ServiceProvider.GetRequiredService<IXmlRepository>();
                         });
 
+
+                    services.AddTransient<TimerService, TimerService>();
+                    services.AddTransient<IPacketSerializer, JsonPacketSerializer>();
+                    services.AddSingleton<ConnectionManager, ConnectionManager>();
+
+
+                    services.AddOptions();
+                    services.Configure<ServerConfiguration>(hostContext.Configuration.GetSection("ServerConfiguration"));
+
+                    services.AddTransient<IServerPacketHandler<PingRequestPacket>, PingRequestPacketHandler>();
+                    
                     services.AddSingleton<IXmlRepository, DatabaseXmlRepository>();
                     services.AddSingleton<UserManager, UserManager>();
                     services.AddSingleton<SessionManager, SessionManager>();
 
+                    /*
                     services.AddTcpServer<GameServer>(hostContext.Configuration.GetSection("ServerConfiguration"))
                         .RegisterPacketHandler<PingRequestPacketHandler>();
+                        */
                 })
                 .ConfigureLogging((hostingContext, logging) =>
                 {
@@ -59,7 +74,17 @@ namespace CardWar.Server
                     logging.AddConsole();
                 });
 
-            await builder.RunConsoleAsync();
+            var host = builder.UseConsoleLifetime().Build();
+
+            var server = new GameServer2(host);
+
+            server.AddPacketHandler<PingRequestPacket, PingRequestPacketHandler>();
+
+            await server.StartAsync();
+
+            host.Services.GetRequiredService<IApplicationLifetime>().ApplicationStopping.Register(server.StopAsync);
+            
+            await host.RunAsync();
         }
     }
 }

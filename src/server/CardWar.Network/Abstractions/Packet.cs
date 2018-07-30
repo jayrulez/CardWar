@@ -1,12 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using CardWar.Common.Utilities;
+using System;
 
 namespace CardWar.Network.Abstractions
 {
     public class Packet : IPacket
     {
-        public string PacketId { get; set; }
-        public string Key { get => GetType().Name; }
+        private string _packetId;
+
+        public string PacketId
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_packetId))
+                {
+                    _packetId = Guid.NewGuid().ToString();
+                }
+
+                return _packetId;
+            }
+        }
+
+        public string Key { get => TypeUtility.GetTypeName(this); }
     }
 }

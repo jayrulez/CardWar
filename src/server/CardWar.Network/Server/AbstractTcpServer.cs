@@ -1,6 +1,8 @@
-﻿using CardWar.Network.Abstractions;
+﻿using CardWar.Common.Utilities;
+using CardWar.Network.Abstractions;
 using CardWar.Network.Common;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -8,12 +10,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace CardWar.Network.Server
 {
-    public abstract class TcpServer : IServer
+    public abstract class AbstractTcpServer
     {
         protected readonly ServerConfiguration _configuration;
         protected readonly TimerService _timerService;
@@ -29,30 +32,32 @@ namespace CardWar.Network.Server
         protected ILogger _logger;
         protected TcpListener _listener;
         protected Task _listenerTask;
+        protected IServiceProvider _serviceProvider;
 
-        public TcpServer(IServiceProvider provider)
+        private IHost _host;
+
+        public AbstractTcpServer(IHost host)
         {
+            _host = host;
+
+            _serviceProvider = _host.Services;
+
             _tasksCancellationTokenSource = new CancellationTokenSource();
             _tasksCancellationToken = _tasksCancellationTokenSource.Token;
 
-            _configuration = provider.GetRequiredService<IOptions<ServerConfiguration>>().Value;
+            _configuration = _serviceProvider.GetRequiredService<IOptions<ServerConfiguration>>().Value;
 
-            _timerService = provider.GetRequiredService<TimerService>();
+            _timerService = _serviceProvider.GetRequiredService<TimerService>();
 
-            _connectionManager = provider.GetRequiredService<ConnectionManager>();
+            _connectionManager = _serviceProvider.GetRequiredService<ConnectionManager>();
 
-            _packetSerializer = provider.GetRequiredService<IPacketSerializer>();
+            _packetSerializer = _serviceProvider.GetRequiredService<IPacketSerializer>();
 
-            _logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger<TcpServer>();
+            _logger = _serviceProvider.GetRequiredService<ILogger<TcpServer>>();
 
             _serverTasks = new ConcurrentBag<Task>();
 
             _packetHandlers = new Dictionary<string, IServerPacketHandler>();
-
-            foreach (var packerHandler in provider.GetServices<IServerPacketHandler>())
-            {
-                _packetHandlers.Add(packerHandler.PacketId, packerHandler);
-            }
         }
 
         public virtual Task OnConnected(IConnection connection, CancellationToken cancellationToken)
@@ -99,64 +104,18 @@ namespace CardWar.Network.Server
             }
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public AbstractTcpServer AddPacketHandler<TPacket, TPacketHandler>() where TPacket: Packet where TPacketHandler : ServerPacketHandler<TPacket>
         {
-            _logger.LogInformation("Starting service");
+            var packetHandler = _serviceProvider.GetService<IServerPacketHandler<TPacket>>();
 
-            _timerService.Start(_tasksCancellationToken);
-
-            var ipAddress = IPAddress.Loopback;
-
-            _listener = new TcpListener(ipAddress, _configuration.Port);
-
-            _listener.Start();
-
-            _logger.LogInformation($"Listening on {ipAddress}:{_configuration.Port}");
-
-            _listenerTask = Task.Factory.StartNew(() => ListenLoop(_tasksCancellationToken), _tasksCancellationToken);
-
-            _serverTasks.Add(_listenerTask);
-
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            _logger.LogInformation("Stopping service");
-
-            _tasksCancellationTokenSource.Cancel();
-
-            try
+            if(packetHandler != null)
             {
-                Task.WaitAll(_serverTasks.ToArray());
-            }
-            catch (AggregateException ex)
-            {
-                _logger.LogInformation("AggregateException thrown with the following inner exceptions:");
+                _packetHandlers.Add(TypeUtility.GetTypeName<TPacket>(), packetHandler);
 
-                foreach (var exception in ex.InnerExceptions)
-                {
-                    if (exception is TaskCanceledException)
-                    {
-                        _logger.LogInformation($"TaskCanceledException: Task {((TaskCanceledException)exception).Task.Id}");
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Exception: {exception.GetType().Name}");
-                    }
-                }
-            }
-            finally
-            {
-                _tasksCancellationTokenSource.Dispose();
+                _logger.LogInformation($"Packet '{packetHandler.GetType().Name}' registered for packet type '{typeof(TPacket).Name}'.");
             }
 
-            foreach (var task in _serverTasks)
-            {
-                _logger.LogInformation($"Task '{task.Id}' is now '{task.Status}'.");
-            }
-
-            return Task.CompletedTask;
+            return this;
         }
 
         protected async void ListenLoop(CancellationToken cancellationToken)
@@ -228,6 +187,77 @@ namespace CardWar.Network.Server
             {
                 throw new NotImplementedException($"No Packet Handler has been registered for packet with 'Key'='{packet.Key}'.");
             }
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            _logger.LogInformation("Starting service");
+
+            _timerService.Start(_tasksCancellationToken);
+
+            var ipAddress = IPAddress.Loopback;
+
+            _listener = new TcpListener(ipAddress, _configuration.Port);
+
+            _listener.Start();
+
+            _logger.LogInformation($"Listening on {ipAddress}:{_configuration.Port}");
+
+            _listenerTask = Task.Factory.StartNew(() => ListenLoop(_tasksCancellationToken), _tasksCancellationToken);
+
+            _serverTasks.Add(_listenerTask);
+
+            /*
+            var applicationLifetime = _serviceProvider.GetRequiredService<IApplicationLifetime>();
+
+            applicationLifetime.ApplicationStopping.Register(OnShutdown);
+            */
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            _logger.LogInformation("Stopping service");
+
+            _tasksCancellationTokenSource.Cancel();
+
+            try
+            {
+                Task.WaitAll(_serverTasks.ToArray());
+            }
+            catch (AggregateException ex)
+            {
+                _logger.LogInformation("AggregateException thrown with the following inner exceptions:");
+
+                foreach (var exception in ex.InnerExceptions)
+                {
+                    if (exception is TaskCanceledException)
+                    {
+                        _logger.LogInformation($"TaskCanceledException: Task {((TaskCanceledException)exception).Task.Id}");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Exception: {exception.GetType().Name}");
+                    }
+                }
+            }
+            finally
+            {
+                _tasksCancellationTokenSource.Dispose();
+            }
+
+            foreach (var task in _serverTasks)
+            {
+                _logger.LogInformation($"Task '{task.Id}' is now '{task.Status}'.");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public void StopAsync()
+        {
+            StopAsync(default(CancellationToken));
         }
     }
 }
