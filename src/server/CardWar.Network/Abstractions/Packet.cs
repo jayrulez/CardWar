@@ -20,6 +20,6 @@ namespace CardWar.Network.Abstractions
             }
         }
 
-        public string Key { get => TypeUtility.GetTypeName(this); }
+        public string PacketType { get; set; }
     }
 }

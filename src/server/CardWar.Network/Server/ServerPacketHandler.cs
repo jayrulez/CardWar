@@ -13,9 +13,6 @@ namespace CardWar.Network.Server
             _packetSerializer = packetSerializer;
         }
 
-        public string PacketId => typeof(T).Name;
-        public Type PacketType => typeof(T);
-
         public async Task Handle(IConnection connection, byte[] packetBytes)
         {
             var packet = _packetSerializer.Deserialize<T>(packetBytes);

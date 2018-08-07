@@ -1,4 +1,5 @@
-﻿using CardWar.Network.Abstractions;
+﻿using CardWar.Common.Utilities;
+using CardWar.Network.Abstractions;
 using Newtonsoft.Json;
 using System;
 using System.Text;
@@ -39,6 +40,8 @@ namespace CardWar.Network.Common
 
         public byte[] Serialize(Packet packet)
         {
+            packet.PacketType = TypeUtility.GetTypeName(packet);
+
             var data = JsonConvert.SerializeObject(packet);
 
             return Encoding.UTF8.GetBytes(data);

@@ -76,7 +76,7 @@ namespace CardWar.Server
 
             var host = builder.UseConsoleLifetime().Build();
 
-            var server = new GameServer2(host);
+            var server = new GameServer(host);
 
             server.AddPacketHandler<PingRequestPacket, PingRequestPacketHandler>();
 

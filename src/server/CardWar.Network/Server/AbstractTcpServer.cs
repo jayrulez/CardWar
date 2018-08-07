@@ -53,7 +53,7 @@ namespace CardWar.Network.Server
 
             _packetSerializer = _serviceProvider.GetRequiredService<IPacketSerializer>();
 
-            _logger = _serviceProvider.GetRequiredService<ILogger<TcpServer>>();
+            _logger = _serviceProvider.GetRequiredService<ILogger<AbstractTcpServer>>();
 
             _serverTasks = new ConcurrentBag<Task>();
 
@@ -169,23 +169,23 @@ namespace CardWar.Network.Server
 
         protected async Task OnPacketReceived(IConnection connection, Packet packet, byte[] packetBytes)
         {
-            var packetType = packet.Key;
+            var packetType = packet.PacketType;
 
-            if (string.IsNullOrEmpty(packet.Key))
+            if (string.IsNullOrEmpty(packet.PacketType))
             {
                 //throw new Exception($"Invalid packet.");
                 return;
             }
 
-            if (_packetHandlers.ContainsKey(packet.Key))
+            if (_packetHandlers.ContainsKey(packet.PacketType))
             {
-                var handler = _packetHandlers[packet.Key];
+                var handler = _packetHandlers[packet.PacketType];
 
                 await handler.Handle(connection, packetBytes);
             }
             else
             {
-                throw new NotImplementedException($"No Packet Handler has been registered for packet with 'Key'='{packet.Key}'.");
+                throw new NotImplementedException($"No Packet Handler has been registered for packet with 'Key'='{packet.PacketType}'.");
             }
         }
 

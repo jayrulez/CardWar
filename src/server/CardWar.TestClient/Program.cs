@@ -53,12 +53,6 @@ namespace CardWar.TestClient
                     await connection.Send(new PingRequestPacket
                     {
                     });
-                    await connection.Send(new PingRequestPacket
-                    {
-                    });
-                    await connection.Send(new PingRequestPacket
-                    {
-                    });
                 }
                 catch (Exception ex)
                 {
