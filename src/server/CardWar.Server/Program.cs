@@ -59,6 +59,10 @@ namespace CardWar.Server
                     logging.AddConsole();
                 });
 
+            var host = builder.Build();
+
+            //host.
+
             await builder.RunConsoleAsync();
         }
     }
