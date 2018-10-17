@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CardWar.Common\CardWar.Common.csproj" />
+  </ItemGroup>
+
 </Project>

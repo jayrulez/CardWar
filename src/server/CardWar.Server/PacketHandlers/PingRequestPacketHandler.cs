@@ -10,9 +10,9 @@ namespace CardWar.Server.PacketHandlers
     {
         private readonly ILogger _logger;
 
-        public PingRequestPacketHandler(ILoggerFactory loggerFactory, IPacketSerializer packetSerializer) : base(packetSerializer)
+        public PingRequestPacketHandler(ILogger<PingRequestPacketHandler> logger, IPacketSerializer packetSerializer) : base(packetSerializer)
         {
-            _logger = loggerFactory.CreateLogger<PingRequestPacketHandler>();
+            _logger = logger;
         }
 
         public override async Task Handle(IConnection connection, PingRequestPacket packet)

@@ -3,35 +3,39 @@ using CardWar.Network.Server;
 using CardWar.Packets;
 using CardWar.Server.Enums;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace CardWar.Server
 {
-    class GameServer : TcpServer
+    public class GameServer : AbstractTcpServer
     {
-        public GameServer(IServiceProvider provider) : base(provider)
+        public GameServer(IHost host) : base(host)
         {
-            _logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger<GameServer>();
+            _logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger<GameServer>();
         }
+        
 
         public bool StartSession(IConnection connection, string packetKey, byte[] packetBuffer)
         {
-            if(packetKey == typeof(LoginRequestPacket).Name)
+            if (packetKey == typeof(LoginRequestPacket).Name)
             {
                 var data = connection.MapPacket<LoginRequestPacket>(packetBuffer);
             }
 
-            if(packetKey == typeof(ReconnectRequestPacket).Name)
+            if (packetKey == typeof(ReconnectRequestPacket).Name)
             {
                 var data = connection.MapPacket<ReconnectRequestPacket>(packetBuffer);
             }
             return false;
         }
 
+        /*
         public async override Task OnConnected(IConnection connection, CancellationToken cancellationToken)
         {
             var packet = await connection.GetPacket();
@@ -42,9 +46,9 @@ namespace CardWar.Server
                 typeof(ReconnectRequestPacket).Name
             };
 
-            if (authenticationPackets.Contains(packet.Packet.Key))
+            if (authenticationPackets.Contains(packet.Packet.PacketType))
             {
-                if (StartSession(connection, packet.Packet.Key, packet.PacketBytes))
+                if (StartSession(connection, packet.Packet.PacketType, packet.PacketBytes))
                 {
                     await base.OnConnected(connection, cancellationToken);
                 }
@@ -70,5 +74,6 @@ namespace CardWar.Server
                 connection.Close();
             }
         }
+        */
     }
 }

@@ -7,7 +7,10 @@ namespace CardWar.Network.Abstractions
 {
     public interface IServerPacketHandler
     {
-        string PacketType { get; }
         Task Handle(IConnection connection, byte[] packetBytes);
+    }
+
+    public interface IServerPacketHandler<T> : IServerPacketHandler where T : Packet
+    {
     }
 }
