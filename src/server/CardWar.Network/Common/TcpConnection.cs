@@ -1,8 +1,7 @@
 ﻿using CardWar.Network.Abstractions;
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CardWar.Network.Common
@@ -13,17 +12,17 @@ namespace CardWar.Network.Common
 
         public string Id { get; }
 
-        public bool Closed => !_socket.Connected;
+        public bool IsClosed => !_socket.Connected;
 
         private readonly Socket _socket;
-        private readonly IPacketSerializer _packetSerializer;
+        private readonly IPacketConverter _packetConverter;
 
-        public TcpConnection(Socket socket, IPacketSerializer packetSerializer)
+        public TcpConnection(Socket socket, IPacketConverter packetConverter)
         {
             Id = Guid.NewGuid().ToString();
 
             _socket = socket;
-            _packetSerializer = packetSerializer;
+            _packetConverter = packetConverter;
         }
 
         public void Close()
@@ -31,8 +30,6 @@ namespace CardWar.Network.Common
             if (_socket.Connected)
             {
                 _socket.Shutdown(SocketShutdown.Both);
-
-                //_socket.Close();
             }
         }
 
@@ -40,37 +37,33 @@ namespace CardWar.Network.Common
         {
             var packetBuffer = new byte[BufferSize];
 
-            var serializedPacketBuffer = _packetSerializer.Serialize(packet);
-            
-            if (serializedPacketBuffer.Length > BufferSize)
+            var packetBytes = _packetConverter.ToBytes(packet);
+
+            if (packetBytes.Length > BufferSize)
             {
                 throw new Exception($"Serialized packet is larger than buffer size of '{BufferSize}' bytes.");
             }
 
-            serializedPacketBuffer.CopyTo(packetBuffer, 0);
+            packetBytes.CopyTo(packetBuffer, 0);
 
-            await _socket.SendAsync(buffer: new ArraySegment<byte>(array: packetBuffer, offset: 0, count: packetBuffer.Length), socketFlags: SocketFlags.None);
+            //await _socket.SendAsync(buffer: new ArraySegment<byte>(array: packetBuffer, offset: 0, count: packetBuffer.Length), socketFlags: SocketFlags.None);
+            await _socket.SendAsync(buffer: new ArraySegment<byte>(array: packetBytes, offset: 0, count: packetBytes.Length), socketFlags: SocketFlags.None);
             //await _socket.SendAsync(buffer: new ArraySegment<byte>(array: serializedPacketBuffer, offset: 0, count: serializedPacketBuffer.Length), socketFlags: SocketFlags.None);
         }
 
-        public async Task<(Packet Packet, byte[] PacketBytes)> GetPacket()
+        public async IAsyncEnumerable<Packet> GetPackets()
         {
             var networkStream = new NetworkStream(_socket, false);
+            byte[] streamBuffer = new byte[BufferSize];
 
-            byte[] buffer = new byte[BufferSize];
+            var streamSize = await networkStream.ReadAsync(streamBuffer, 0, streamBuffer.Length);
 
-            await networkStream.ReadAsync(buffer, 0, buffer.Length);
+            Array.Resize(ref streamBuffer, streamSize);
 
-            var packet = _packetSerializer.Deserialize<Packet>(buffer);
-
-            return (packet, buffer);
-        }
-        
-        public T MapPacket<T>(byte[] packetBytes) where T : Packet
-        {
-            var packet = _packetSerializer.Deserialize<T>(packetBytes);
-
-            return packet;
+            await foreach(var packet in _packetConverter.StreamFromBytes<Packet>(streamBuffer))
+            {
+                yield return packet;
+            }
         }
     }
 }

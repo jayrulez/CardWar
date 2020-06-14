@@ -1,11 +1,11 @@
-﻿using CardWar.Common.Utilities;
-using System;
+﻿using System;
 
 namespace CardWar.Network.Abstractions
 {
-    public class Packet : IPacket
+    public class Packet
     {
         private string _packetId;
+        private byte[] _data;
 
         public string PacketId
         {
@@ -20,6 +20,15 @@ namespace CardWar.Network.Abstractions
             }
         }
 
-        public string PacketType { get; set; }
+        public string Type { get; set; }
+        public byte[] GetData()
+        {
+            return _data;
+        }
+
+        public void SetData(byte[] data)
+        {
+            _data = data;
+        }
     }
 }

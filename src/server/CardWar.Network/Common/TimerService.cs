@@ -11,9 +11,9 @@ namespace CardWar.Network.Common
 
         private readonly ILogger _logger;
 
-        public TimerService(ILoggerFactory loggerFactory)
+        public TimerService(ILogger<TimerService> logger)
         {
-            _logger = loggerFactory.CreateLogger<TimerService>();
+            _logger = logger;
         }
 
         public void Start(CancellationToken cancellationToken)

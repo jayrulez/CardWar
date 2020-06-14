@@ -25,12 +25,12 @@ namespace CardWar.Server
         {
             if (packetKey == typeof(LoginRequestPacket).Name)
             {
-                var data = connection.MapPacket<LoginRequestPacket>(packetBuffer);
+                //var data = connection.MapPacket<LoginRequestPacket>(packetBuffer);
             }
 
             if (packetKey == typeof(ReconnectRequestPacket).Name)
             {
-                var data = connection.MapPacket<ReconnectRequestPacket>(packetBuffer);
+                //var data = connection.MapPacket<ReconnectRequestPacket>(packetBuffer);
             }
             return false;
         }

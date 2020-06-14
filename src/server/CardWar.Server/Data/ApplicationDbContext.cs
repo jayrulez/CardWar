@@ -1,16 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CardWar.Server.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : DbContext, IDataProtectionKeyContext
     {
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
         public virtual DbSet<Card> Cards { get; set; }
         public virtual DbSet<Session> Sessions { get; set; }
         public virtual DbSet<User> Users { get; set; }
-        public virtual DbSet<XmlKey> XmlKeys { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
@@ -38,11 +39,6 @@ namespace CardWar.Server.Data
                 entity.HasKey(e => e.Id);
 
                 entity.HasAlternateKey(e => e.Username);
-            });
-
-            builder.Entity<XmlKey>(entity =>
-            {
-                entity.HasKey(e => e.Name);
             });
         }
     }

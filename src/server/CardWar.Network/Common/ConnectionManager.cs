@@ -49,7 +49,7 @@ namespace CardWar.Network.Common
         {
             RemoveConnection(connection.Id);
 
-            if (!connection.Closed)
+            if (!connection.IsClosed)
             {
                 connection.Close();
             }

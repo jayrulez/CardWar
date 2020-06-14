@@ -18,16 +18,16 @@ namespace CardWar.Network.Server
 {
     public abstract class AbstractTcpServer
     {
-        protected readonly ServerConfiguration _configuration;
+        protected readonly ServerOptions _configuration;
         protected readonly TimerService _timerService;
         protected readonly ConnectionManager _connectionManager;
-        protected readonly IPacketSerializer _packetSerializer;
+        protected readonly IPacketConverter _packetSerializer;
 
         protected readonly CancellationTokenSource _tasksCancellationTokenSource;
         protected readonly CancellationToken _tasksCancellationToken;
 
         protected readonly ConcurrentBag<Task> _serverTasks;
-        protected readonly Dictionary<string, IServerPacketHandler> _packetHandlers;
+        protected readonly Dictionary<string, IPacketHandler> _packetHandlers;
 
         protected ILogger _logger;
         protected TcpListener _listener;
@@ -45,19 +45,19 @@ namespace CardWar.Network.Server
             _tasksCancellationTokenSource = new CancellationTokenSource();
             _tasksCancellationToken = _tasksCancellationTokenSource.Token;
 
-            _configuration = _serviceProvider.GetRequiredService<IOptions<ServerConfiguration>>().Value;
+            _configuration = _serviceProvider.GetRequiredService<IOptions<ServerOptions>>().Value;
 
             _timerService = _serviceProvider.GetRequiredService<TimerService>();
 
             _connectionManager = _serviceProvider.GetRequiredService<ConnectionManager>();
 
-            _packetSerializer = _serviceProvider.GetRequiredService<IPacketSerializer>();
+            _packetSerializer = _serviceProvider.GetRequiredService<IPacketConverter>();
 
             _logger = _serviceProvider.GetRequiredService<ILogger<AbstractTcpServer>>();
 
             _serverTasks = new ConcurrentBag<Task>();
 
-            _packetHandlers = new Dictionary<string, IServerPacketHandler>();
+            _packetHandlers = new Dictionary<string, IPacketHandler>();
         }
 
         public virtual Task OnConnected(IConnection connection, CancellationToken cancellationToken)
@@ -104,13 +104,13 @@ namespace CardWar.Network.Server
             }
         }
 
-        public AbstractTcpServer AddPacketHandler<TPacket, TPacketHandler>() where TPacket: Packet where TPacketHandler : ServerPacketHandler<TPacket>
+        public AbstractTcpServer AddPacketHandler<TPacket, TPacketHandler>() where TPacket : Packet where TPacketHandler : PacketHandler<TPacket>
         {
-            var packetHandler = _serviceProvider.GetService<IServerPacketHandler<TPacket>>();
+            var packetHandler = _serviceProvider.GetService<IPacketHandler<TPacket>>();
 
-            if(packetHandler != null)
+            if (packetHandler != null)
             {
-                _packetHandlers.Add(TypeUtility.GetTypeName<TPacket>(), packetHandler);
+                _packetHandlers.Add(typeof(TPacket).FullName, packetHandler);
 
                 _logger.LogInformation($"Packet '{packetHandler.GetType().Name}' registered for packet type '{typeof(TPacket).Name}'.");
             }
@@ -135,9 +135,9 @@ namespace CardWar.Network.Server
 
                 if (socket != null)
                 {
-                    var conneection = new TcpConnection(socket, _packetSerializer);
+                    var connection = new TcpConnection(socket, _packetSerializer);
 
-                    var handlerTask = Task.Factory.StartNew(() => HandleConnection(conneection, cancellationToken), cancellationToken);
+                    var handlerTask = Task.Factory.StartNew(() => HandleConnection(connection, cancellationToken), cancellationToken);
 
                     _serverTasks.Add(handlerTask);
                 }
@@ -148,7 +148,7 @@ namespace CardWar.Network.Server
         {
             await OnConnected(connection, cancellationToken);
 
-            while (!connection.Closed)
+            while (!connection.IsClosed)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -159,37 +159,35 @@ namespace CardWar.Network.Server
                     break;
                 }
 
-                var packetData = await connection.GetPacket();
-
-                await OnPacketReceived(connection, packetData.Packet, packetData.PacketBytes);
+                await foreach (var packet in connection.GetPackets())
+                {
+                    await OnPacketReceived(connection, packet);
+                }
             }
 
             await OnDisconnected(connection);
         }
 
-        protected async Task OnPacketReceived(IConnection connection, Packet packet, byte[] packetBytes)
+        protected async Task OnPacketReceived(IConnection connection, Packet packet)
         {
-            var packetType = packet.PacketType;
-
-            if (string.IsNullOrEmpty(packet.PacketType))
+            if (string.IsNullOrEmpty(packet.Type))
             {
                 //throw new Exception($"Invalid packet.");
                 return;
             }
 
-            if (_packetHandlers.ContainsKey(packet.PacketType))
+            if (_packetHandlers.ContainsKey(packet.Type))
             {
-                var handler = _packetHandlers[packet.PacketType];
-
-                await handler.Handle(connection, packetBytes);
+                var handler = _packetHandlers[packet.Type];
+                await handler.Handle(connection, packet);
             }
             else
             {
-                throw new NotImplementedException($"No Packet Handler has been registered for packet with 'Key'='{packet.PacketType}'.");
+                throw new NotImplementedException($"No Packet Handler has been registered for packet with 'Key'='{packet.Type}'.");
             }
         }
 
-        public Task StartAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task StartAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Starting service");
 
@@ -216,7 +214,7 @@ namespace CardWar.Network.Server
             return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task StopAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Stopping service");
 
@@ -257,7 +255,7 @@ namespace CardWar.Network.Server
 
         public void StopAsync()
         {
-            StopAsync(default(CancellationToken));
+            StopAsync(default);
         }
     }
 }

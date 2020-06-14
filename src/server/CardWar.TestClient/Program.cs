@@ -21,13 +21,15 @@ namespace CardWar.TestClient
             Socket.Connect("127.0.0.1", 5000);
             Console.WriteLine("Connected.");
 
-            var connection = new TcpConnection(Socket, new JsonPacketSerializer());
+            var connection = new TcpConnection(Socket, new JsonPacketConverter());
+
+            await Task.Factory.StartNew(() => GetMessages(connection));
 
             try
             {
                 while (true)
                 {
-                    if (!connection.Closed)
+                    if (!connection.IsClosed)
                     {
                         await PingServer(connection);
                     }
@@ -44,9 +46,27 @@ namespace CardWar.TestClient
             //Console.ReadKey();
         }
 
+        public static async Task GetMessages(IConnection connection)
+        {
+            while (!connection.IsClosed)
+            {
+                try
+                {
+                    await foreach (var packet in connection.GetPackets())
+                    {
+                        Console.WriteLine($"Packet received: {packet.Type}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
         public static async Task PingServer(IConnection connection)
         {
-            while (!connection.Closed)
+            while (!connection.IsClosed)
             {
                 try
                 {
@@ -59,7 +79,7 @@ namespace CardWar.TestClient
                     Console.WriteLine(ex.Message);
                 }
 
-                Thread.Sleep(5000);
+                Thread.Sleep(100);
             }
         }
     }

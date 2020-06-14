@@ -1,7 +1,9 @@
-﻿using CardWar.Network.Server;
-using CardWar.Server.PacketHandlers;
+﻿using CardWar.Network.Abstractions;
+using CardWar.Network.Common;
+using CardWar.Network.Server;
 using CardWar.Packets;
 using CardWar.Server.Data;
+using CardWar.Server.PacketHandlers;
 using CardWar.Server.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.Repositories;
@@ -13,8 +15,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using CardWar.Network.Abstractions;
-using CardWar.Network.Common;
 
 namespace CardWar.Server
 {
@@ -43,23 +43,21 @@ namespace CardWar.Server
                     });
 
                     services.AddDataProtection()
-                        .AddKeyManagementOptions(options =>
-                        {
-                            options.XmlRepository = services.BuildServiceProvider().CreateScope().ServiceProvider.GetRequiredService<IXmlRepository>();
-                        });
+                        .SetApplicationName("TOH.Server")
+                        .PersistKeysToDbContext<ApplicationDbContext>()
+                        .SetDefaultKeyLifetime(TimeSpan.FromDays(1825));
 
 
                     services.AddTransient<TimerService, TimerService>();
-                    services.AddTransient<IPacketSerializer, JsonPacketSerializer>();
+                    services.AddTransient<IPacketConverter, JsonPacketConverter>();
                     services.AddSingleton<ConnectionManager, ConnectionManager>();
 
 
                     services.AddOptions();
-                    services.Configure<ServerConfiguration>(hostContext.Configuration.GetSection("ServerConfiguration"));
+                    services.Configure<ServerOptions>(hostContext.Configuration.GetSection("ServerConfiguration"));
 
-                    services.AddTransient<IServerPacketHandler<PingRequestPacket>, PingRequestPacketHandler>();
-                    
-                    services.AddSingleton<IXmlRepository, DatabaseXmlRepository>();
+                    services.AddTransient<IPacketHandler<PingRequestPacket>, PingRequestPacketHandler>();
+
                     services.AddSingleton<UserManager, UserManager>();
                     services.AddSingleton<SessionManager, SessionManager>();
 
@@ -74,13 +72,13 @@ namespace CardWar.Server
                     logging.AddConsole();
                 });
 
-/*
-            var host = builder.Build();
+            /*
+                        var host = builder.Build();
 
-            //host.
+                        //host.
 
-            await builder.RunConsoleAsync();
-*/
+                        await builder.RunConsoleAsync();
+            */
             var host = builder.UseConsoleLifetime().Build();
 
             var server = new GameServer(host);
@@ -89,8 +87,8 @@ namespace CardWar.Server
 
             await server.StartAsync();
 
-            host.Services.GetRequiredService<IApplicationLifetime>().ApplicationStopping.Register(server.StopAsync);
-            
+            host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping.Register(server.StopAsync);
+
             await host.RunAsync();
         }
     }

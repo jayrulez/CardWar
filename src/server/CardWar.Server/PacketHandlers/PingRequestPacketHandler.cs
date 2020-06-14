@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace CardWar.Server.PacketHandlers
 {
-    public class PingRequestPacketHandler : ServerPacketHandler<PingRequestPacket>
+    public class PingRequestPacketHandler : PacketHandler<PingRequestPacket>
     {
         private readonly ILogger _logger;
 
-        public PingRequestPacketHandler(ILogger<PingRequestPacketHandler> logger, IPacketSerializer packetSerializer) : base(packetSerializer)
+        public PingRequestPacketHandler(ILogger<PingRequestPacketHandler> logger, IPacketConverter packetSerializer) : base(packetSerializer)
         {
             _logger = logger;
         }
 
-        public override async Task Handle(IConnection connection, PingRequestPacket packet)
+        public override async Task HandleImp(IConnection connection, PingRequestPacket packet)
         {
-            _logger.LogInformation(packet.ToString());
+            _logger.LogInformation($"{packet} from {connection.Id}");
 
             await connection.Send(new PingResponsePacket { });
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CardWar.Common.Utilities
+﻿namespace CardWar.Common.Utilities
 {
     public static class TypeUtility
     {
